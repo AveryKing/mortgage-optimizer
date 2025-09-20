@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
@@ -16,6 +17,58 @@ function optimizeLoan(creditScore: number, income: number, rate: number) {
 // simple compliance check
 function runCompliance(creditScore: number, dti: number) {
   if (creditScore < 600) {
-    return { status: "fail", reason: "Credit score too low" };
+    return { status: "Fail", details: "Credit score too low" };
+  }
+  if (dti > 0.43) {
+    return { status: "Warning", details: "Debt-to-income ratio too high" };
+  }
+  return { status: "Pass", details: "Meets requirements" };
+}
+
+export async function POST(request: Request) {
+  try {
+    const { amount, termYears, creditScore, income } = await request.json();
+
+    // fake mortgage rate.. TODO: wire real API
+    const rate = 6.0;
+
+    // calculate DTI
+    const dti = amount / (income * 5); // simplified for demo
+
+    // save loan
+    const loan = await prisma.loan.create({
+      data: {
+        clientId: "user",
+        amount,
+        termYears,
+        rate,
+        creditScore,
+        income,
+      },
+    });
+
+    // compliance check
+    const compliance = runCompliance(creditScore, dti);
+
+    await prisma.complianceLog.create({
+      data: {
+        loanId: loan.id,
+        status: compliance.status,
+        details: compliance.details,
+      },
+    });
+
+    // optimization
+    const recommendation = optimizeLoan(creditScore, income, rate);
+
+    await prisma.loan.update({
+      where: { id: loan.id },
+      data: { optimized: true, recommendation },
+    });
+
+    return NextResponse.json({ loan, compliance, recommendation });
+  } catch (err: any) {
+    console.error(err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
