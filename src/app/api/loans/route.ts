@@ -33,7 +33,9 @@ export async function POST(request: Request) {
     const rate = 6.0;
 
     // calculate DTI
-    const dti = amount / (income * 5); // simplified for demo
+    const monthlyPayment = amount * 0.005;
+    const monthlyIncome = income / 12;
+    const dti = monthlyPayment / monthlyIncome;
 
     // save loan
     const loan = await prisma.loan.create({
@@ -66,7 +68,11 @@ export async function POST(request: Request) {
       data: { optimized: true, recommendation },
     });
 
-    return NextResponse.json({ loan, compliance, recommendation });
+    const updatedLoan = await prisma.loan.findUnique({
+      where: { id: loan.id },
+    });
+
+    return NextResponse.json({ loan: updatedLoan, compliance, recommendation });
   } catch (err: any) {
     console.error(err);
     return NextResponse.json({ error: err.message }, { status: 500 });
