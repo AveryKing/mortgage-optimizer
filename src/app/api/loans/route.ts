@@ -12,3 +12,10 @@ function optimizeLoan(creditScore: number, income: number, rate: number) {
   }
   return "Recommend 30-year loan (safer for profile)";
 }
+
+// simple compliance check
+function runCompliance(creditScore: number, dti: number) {
+  if (creditScore < 600) {
+    return { status: "fail", reason: "Credit score too low" };
+  }
+}
