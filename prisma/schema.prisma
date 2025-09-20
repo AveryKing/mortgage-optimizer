@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" 
+  url      = env("DATABASE_URL")
+}
+
+model Loan {
+  id            Int      @id @default(autoincrement())
+  clientId      String
+  amount        Float
+  termYears     Int
+  rate          Float
+  creditScore   Int
+  income        Float
+  createdAt     DateTime @default(now())
+  optimized     Boolean  @default(false)
+  recommendation String?
+  compliance    ComplianceLog[]
+}
+
+model Rate {
+  id        Int      @id @default(autoincrement())
+  kind      String
+  rate      Float
+  source    String
+  timestamp DateTime @default(now())
+}
+
+model ComplianceLog {
+  id        Int      @id @default(autoincrement())
+  loanId    Int
+  status    String
+  details   String
+  timestamp DateTime @default(now())
+  loan      Loan     @relation(fields: [loanId], references: [id])
+}
