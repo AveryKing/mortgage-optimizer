@@ -15,6 +15,7 @@ import { Line, Bar } from "react-chartjs-2";
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
+  InformationCircleIcon,
 } from "@heroicons/react/24/solid";
 import { useEffect, useState } from "react";
 
@@ -49,6 +50,9 @@ export default function LoanDashboard({
   compliance,
 }: LoanDashboardProps) {
   const [mounted, setMounted] = useState(false);
+  const [savingsTooltip, setSavingsTooltip] = useState(false);
+  const [costTooltip, setCostTooltip] = useState(false);
+  const [dtiTooltip, setDtiTooltip] = useState(false);
   useEffect(() => setMounted(true), []);
 
   // Calculate payments
@@ -126,7 +130,7 @@ export default function LoanDashboard({
 
   return (
     <div className="mt-4 space-y-8">
-      {/* Sticky Compliance card */}
+      {/* Compliance card */}
       <div
         className={`flex items-center p-4 rounded-lg shadow-md ${
           compliance.status === "Pass"
@@ -148,16 +152,29 @@ export default function LoanDashboard({
       </div>
 
       {/* Charts grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Savings card FIRST */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Savings card */}
         <div
-          className={`bg-white p-4 rounded-xl shadow-md transition-all duration-700 ${
+          className={`bg-white p-2 rounded-xl shadow-md transition-all duration-700 ${
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
           }`}
         >
-          <h3 className="text-lg font-semibold mb-2">
-            Savings Difference (15y vs 30y)
-          </h3>
+          <div className="flex items-center mb-2">
+            <h3 className="text-lg font-semibold">Savings Difference</h3>
+            <div className="relative ml-2">
+              <InformationCircleIcon
+                className="h-5 w-5 text-gray-400 cursor-help"
+                onMouseEnter={() => setSavingsTooltip(true)}
+                onMouseLeave={() => setSavingsTooltip(false)}
+              />
+              {savingsTooltip && (
+                <div className="absolute z-20 bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                  Savings = difference in total payments between 15 and 30 years
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                </div>
+              )}
+            </div>
+          </div>
           <Bar
             key={`savings-${amount}-${rate}-${income}`}
             data={barData}
@@ -166,7 +183,7 @@ export default function LoanDashboard({
             }}
           />
           <p className="mt-2 text-sm text-gray-600">
-            Choosing a 15-year loan saves about{" "}
+            Choosing a 15-year loan saves{" "}
             <span
               className="font-semibold text-green-600 animate-[pulse-scale_1.5s_infinite]"
               style={{
@@ -182,11 +199,26 @@ export default function LoanDashboard({
 
         {/* Loan cost over time */}
         <div
-          className={`bg-white p-4 rounded-xl shadow-md transition-all duration-700 ${
+          className={`bg-white p-2 rounded-xl shadow-md transition-all duration-700 ${
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
           }`}
         >
-          <h3 className="text-lg font-semibold mb-2">Loan Cost Over Time</h3>
+          <div className="flex items-center mb-2">
+            <h3 className="text-lg font-semibold">Loan Cost Over Time</h3>
+            <div className="relative ml-2">
+              <InformationCircleIcon
+                className="h-5 w-5 text-gray-400 cursor-help"
+                onMouseEnter={() => setCostTooltip(true)}
+                onMouseLeave={() => setCostTooltip(false)}
+              />
+              {costTooltip && (
+                <div className="absolute z-20 bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                  Shows how total payments add up over years
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                </div>
+              )}
+            </div>
+          </div>
           <Line
             key={`line-${amount}-${rate}-${income}`}
             data={lineData}
@@ -196,13 +228,28 @@ export default function LoanDashboard({
 
         {/* DTI ratio bar */}
         <div
-          className={`bg-white p-4 rounded-xl shadow-md transition-all duration-700 ${
+          className={`bg-white p-2 rounded-xl shadow-md transition-all duration-700 ${
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
           }`}
         >
-          <h3 className="text-lg font-semibold mb-2">
-            Debt-to-Income Ratio (DTI)
-          </h3>
+          <div className="flex items-center mb-2">
+            <h3 className="text-lg font-semibold">
+              Debt-to-Income Ratio (DTI)
+            </h3>
+            <div className="relative ml-2">
+              <InformationCircleIcon
+                className="h-5 w-5 text-gray-400 cursor-help"
+                onMouseEnter={() => setDtiTooltip(true)}
+                onMouseLeave={() => setDtiTooltip(false)}
+              />
+              {dtiTooltip && (
+                <div className="absolute z-20 bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                  DTI = monthly debt ÷ monthly income. Safe if below 43%.
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                </div>
+              )}
+            </div>
+          </div>
           <Bar
             key={`dti-${amount}-${rate}-${income}`}
             data={dtiData}
@@ -229,15 +276,6 @@ export default function LoanDashboard({
             </span>{" "}
             (safe threshold is 43%).
           </p>
-        </div>
-
-        {/* Placeholder */}
-        <div
-          className={`bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl shadow-inner flex items-center justify-center text-blue-700 font-medium italic transition-all duration-700 ${
-            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-          }`}
-        >
-          Future: AI Loan Optimizer
         </div>
       </div>
 
