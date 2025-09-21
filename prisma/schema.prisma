@@ -3,12 +3,55 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite" 
-  url      = env("DATABASE_URL")
+  provider          = "sqlserver"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  name          String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  loans         Loan[]
+  notifications NotificationPreference[]
+}
+
+model Account {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String? @db.VarChar(MAX)
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.VarChar(MAX)
+  session_state     String?
+  ext_expires_in    Int?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id])
 }
 
 model Loan {
   id            Int      @id @default(autoincrement())
+  userId        Int
   clientId      String
   amount        Float
   termYears     Int
@@ -16,9 +59,12 @@ model Loan {
   creditScore   Int
   income        Float
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   optimized     Boolean  @default(false)
   recommendation String?
   compliance    ComplianceLog[]
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Rate {
@@ -36,4 +82,13 @@ model ComplianceLog {
   details   String
   timestamp DateTime @default(now())
   loan      Loan     @relation(fields: [loanId], references: [id])
+}
+
+model NotificationPreference {
+  id      Int     @id @default(autoincrement())
+  userId  Int
+  channel String  // "email" or "sms"
+  enabled Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id])
 }

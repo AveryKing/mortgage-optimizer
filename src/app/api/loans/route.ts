@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 const prisma = new PrismaClient();
 
@@ -27,6 +29,11 @@ function runCompliance(creditScore: number, dti: number) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { amount, termYears, creditScore, income } = await request.json();
 
     // fake mortgage rate.. TODO: wire real API
@@ -37,15 +44,18 @@ export async function POST(request: Request) {
     const monthlyIncome = income / 12;
     const dti = monthlyPayment / monthlyIncome;
 
-    // save loan
+    // save loan linked to logged-in user
     const loan = await prisma.loan.create({
       data: {
-        clientId: "user",
         amount,
         termYears,
         rate,
         creditScore,
         income,
+        clientId: session.user.id.toString(),
+        user: {
+          connect: { id: session.user.id },
+        },
       },
     });
 
@@ -63,13 +73,9 @@ export async function POST(request: Request) {
     // optimization
     const recommendation = optimizeLoan(creditScore, income, rate);
 
-    await prisma.loan.update({
+    const updatedLoan = await prisma.loan.update({
       where: { id: loan.id },
       data: { optimized: true, recommendation },
-    });
-
-    const updatedLoan = await prisma.loan.findUnique({
-      where: { id: loan.id },
     });
 
     return NextResponse.json({ loan: updatedLoan, compliance, recommendation });
