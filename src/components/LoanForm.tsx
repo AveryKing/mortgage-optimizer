@@ -33,7 +33,7 @@ export default function LoanForm() {
   // Quick scenarios
   const scenarios = {
     strong: { amount: 300000, termYears: 15, creditScore: 780, income: 120000 },
-    risk: { amount: 250000, termYears: 30, creditScore: 600, income: 45000 },
+    risk: { amount: 400000, termYears: 30, creditScore: 600, income: 60000 },
     average: { amount: 200000, termYears: 30, creditScore: 680, income: 70000 },
   };
 
